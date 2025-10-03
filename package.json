@@ -1,0 +1,33 @@
+{
+  "name": "redis-mq-microservices",
+  "version": "1.0.0",
+  "description": "Microservices Authentication & User Management with Redis Message Queue",
+  "scripts": {
+    "install:all": "npm install --prefix authenication && npm install --prefix user",
+    "build:all": "npm run build --prefix authenication && npm run build --prefix user",
+    "start:auth": "npm run start:dev --prefix authenication",
+    "start:user": "npm run start:dev --prefix user",
+    "start:redis": "docker-compose up -d",
+    "stop:redis": "docker-compose down",
+    "logs:redis": "docker logs -f redis",
+    "redis:cli": "docker exec -it redis redis-cli",
+    "test:auth": "npm test --prefix authenication",
+    "test:user": "npm test --prefix user",
+    "lint:auth": "npm run lint --prefix authenication",
+    "lint:user": "npm run lint --prefix user",
+    "format:auth": "npm run format --prefix authenication",
+    "format:user": "npm run format --prefix user"
+  },
+  "keywords": [
+    "microservices",
+    "nestjs",
+    "redis",
+    "postgresql",
+    "oauth",
+    "jwt",
+    "authentication"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {}
+}

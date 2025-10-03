@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7.2
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379" # Redis server
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  redisinsight:
+    image: redislabs/redisinsight:1.14.0
+    container_name: redisinsight
+    restart: always
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672" # cổng cho app kết nối
+      - "15672:15672" # cổng UI web quản lý
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  redis_data:
+  rabbitmq_data:
