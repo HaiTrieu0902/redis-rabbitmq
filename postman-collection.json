@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Redis MQ - Auth & User Microservices",
-    "description": "API Collection for Authentication and User Management Microservices",
+    "name": "Redis MQ - Microservices API Collection",
+    "description": "API Collection for Authentication, User Management, and Transaction Streaming Microservices",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -16,12 +16,22 @@
       "type": "string"
     },
     {
+      "key": "streaming_url",
+      "value": "http://localhost:3003",
+      "type": "string"
+    },
+    {
       "key": "access_token",
       "value": "",
       "type": "string"
     },
     {
       "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transaction_id",
       "value": "",
       "type": "string"
     }
@@ -332,6 +342,337 @@
           }
         }
       ]
+    },
+    {
+      "name": "Streaming Service (Go)",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{streaming_url}}/health",
+              "host": ["{{streaming_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if streaming service is running"
+          }
+        },
+        {
+          "name": "Create Transaction",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('transaction_id', response.data.id);",
+                  "        console.log('Transaction ID saved:', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.50,\n  \"currency\": \"VND\",\n  \"transaction_type\": \"deposit\",\n  \"description\": \"Monthly deposit via Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions"]
+            },
+            "description": "Create a new transaction. Transaction types: deposit, withdraw, purchase"
+          }
+        },
+        {
+          "name": "Get Transaction By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions/:transactionId",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions", ":transactionId"],
+              "variable": [
+                {
+                  "key": "transactionId",
+                  "value": "{{transaction_id}}",
+                  "description": "UUID of the transaction"
+                }
+              ]
+            },
+            "description": "Retrieve a specific transaction by its UUID"
+          }
+        },
+        {
+          "name": "Get My Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions/my?page=1&page_size=10",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions", "my"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10",
+                  "description": "Items per page (default: 10, max: 100)"
+                }
+              ]
+            },
+            "description": "Get all transactions for the authenticated user with pagination"
+          }
+        },
+        {
+          "name": "Update Transaction Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"success\"\n}"
+            },
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions/:transactionId/status",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions", ":transactionId", "status"],
+              "variable": [
+                {
+                  "key": "transactionId",
+                  "value": "{{transaction_id}}",
+                  "description": "UUID of the transaction"
+                }
+              ]
+            },
+            "description": "Update transaction status. Valid statuses: pending, success, failed"
+          }
+        },
+        {
+          "name": "Get All Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions?page=1&page_size=20",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20",
+                  "description": "Items per page (default: 10, max: 100)"
+                }
+              ]
+            },
+            "description": "Get all transactions in the system (admin function)"
+          }
+        },
+        {
+          "name": "Get Transactions By Status - Pending",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions/status?status=pending&page=1&page_size=10",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions", "status"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "description": "Transaction status: pending, success, or failed"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Filter transactions by status with pagination"
+          }
+        },
+        {
+          "name": "Get Transactions By Status - Success",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions/status?status=success&page=1&page_size=10",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions", "status"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "success"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all successful transactions"
+          }
+        },
+        {
+          "name": "Get Transactions By Status - Failed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions/status?status=failed&page=1&page_size=10",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions", "status"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "failed"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all failed transactions"
+          }
+        },
+        {
+          "name": "Create Withdraw Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 50.00,\n  \"currency\": \"USD\",\n  \"transaction_type\": \"withdraw\",\n  \"description\": \"Withdraw funds\"\n}"
+            },
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions"]
+            },
+            "description": "Example: Create a withdrawal transaction"
+          }
+        },
+        {
+          "name": "Create Purchase Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 25.99,\n  \"currency\": \"USD\",\n  \"transaction_type\": \"purchase\",\n  \"description\": \"Purchase item XYZ\"\n}"
+            },
+            "url": {
+              "raw": "{{streaming_url}}/api/v1/transactions",
+              "host": ["{{streaming_url}}"],
+              "path": ["api", "v1", "transactions"]
+            },
+            "description": "Example: Create a purchase transaction"
+          }
+        }
+      ],
+      "description": "Go-based streaming service for transaction management with RabbitMQ event publishing"
     }
   ]
 }

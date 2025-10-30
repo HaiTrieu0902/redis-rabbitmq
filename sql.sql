@@ -158,3 +158,17 @@ ALTER TABLE conversation
 ADD COLUMN user_id uuid REFERENCES users(id) ON DELETE CASCADE;
 
 
+
+
+
+CREATE TABLE IF NOT EXISTS transactions (
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         uuid REFERENCES users(id) ON DELETE CASCADE,
+    amount          NUMERIC(12, 2) NOT NULL,         -- Số tiền giao dịch
+    currency        VARCHAR(10) DEFAULT 'VND',       -- Loại tiền
+    transaction_type VARCHAR(50) NOT NULL,           -- vd: 'deposit', 'withdraw', 'purchase'
+    status          VARCHAR(20) DEFAULT 'pending',   -- 'pending', 'success', 'failed'
+    description     TEXT,                            -- Mô tả giao dịch
+    created_at      TIMESTAMP DEFAULT NOW(),
+    updated_at      TIMESTAMP DEFAULT NOW()
+);
